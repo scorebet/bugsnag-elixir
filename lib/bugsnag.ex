@@ -33,7 +33,7 @@ defmodule Bugsnag do
     end
 
     children = [
-      supervisor(Task.Supervisor, [[name: Bugsnag.TaskSupervisor, restart: :transient]])
+      {Task.Supervisor, name: Bugsnag.TaskSupervisor}
     ]
 
     opts = [strategy: :one_for_one, name: Bugsnag.Supervisor]
@@ -45,10 +45,16 @@ defmodule Bugsnag do
   (I.e. this might fail silently)
   """
   def report(exception, options \\ []) do
-    Task.Supervisor.start_child(Bugsnag.TaskSupervisor, __MODULE__, :sync_report, [
-      exception,
-      add_stacktrace(options)
-    ])
+    Task.Supervisor.start_child(
+      Bugsnag.TaskSupervisor,
+      __MODULE__,
+      :sync_report,
+      [
+        exception,
+        add_stacktrace(options)
+      ],
+      restart: :transient
+    )
   end
 
   def json_library(), do: Application.get_env(:bugsnag, :json_library, Jason)
